@@ -123,6 +123,11 @@
       background: #1d4ed8;
     }
 
+    #sendBtn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
     .typing {
       color: #6b7280;
       font-size: 14px;
@@ -163,6 +168,7 @@
     </div>
 
     <div class="input-area">
+
       <input
         type="text"
         id="userInput"
@@ -170,35 +176,19 @@
         autocomplete="off"
       >
 
-      <button id="sendBtn">Send</button>
+      <button id="sendBtn">
+        Send
+      </button>
+
     </div>
 
   </div>
 
-
   <script>
-
-    // ==========================================
-    // GROK API CONFIGURATION
-    // ==========================================
-
-    const GROK_API_KEY = "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";
-
-    const GROK_API_URL = "https://api.x.ai/v1/chat/completions";
-
-
-    // ==========================================
-    // HTML ELEMENTS
-    // ==========================================
 
     const chatBox = document.getElementById("chatBox");
     const userInput = document.getElementById("userInput");
     const sendBtn = document.getElementById("sendBtn");
-
-
-    // ==========================================
-    // CHAT HISTORY
-    // ==========================================
 
     let messages = [
       {
@@ -208,10 +198,6 @@
       }
     ];
 
-
-    // ==========================================
-    // ADD MESSAGE TO SCREEN
-    // ==========================================
 
     function addMessage(text, sender) {
 
@@ -233,98 +219,78 @@
     }
 
 
-    // ==========================================
-    // SEND MESSAGE
-    // ==========================================
-
     async function sendMessage() {
 
       const text = userInput.value.trim();
 
-      if (!text) return;
+      if (!text || sendBtn.disabled) {
+        return;
+      }
 
-      // Show user message
       addMessage(text, "user");
 
-      // Clear input
       userInput.value = "";
 
-      // Add to conversation
       messages.push({
         role: "user",
         content: text
       });
 
 
-      // Typing indicator
       const typing = document.createElement("div");
 
       typing.className = "typing";
-
       typing.id = "typing";
-
       typing.textContent = "AI is thinking...";
 
       chatBox.appendChild(typing);
 
       chatBox.scrollTop = chatBox.scrollHeight;
 
+      sendBtn.disabled = true;
+
 
       try {
 
-        // ==========================================
-        // GROK API REQUEST
-        // ==========================================
-
-        const response = await fetch(GROK_API_URL, {
+        const response = await fetch("/api/chat", {
 
           method: "POST",
 
           headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${GROK_API_KEY}`
+            "Content-Type": "application/json"
           },
 
           body: JSON.stringify({
-
-            model: "grok-4-1-fast-reasoning",
-
-            messages: messages,
-
-            temperature: 0.7,
-
-            max_tokens: 1000
-
+            messages: messages
           })
 
         });
 
 
-        // Remove typing indicator
+        const data = await response.json();
+
         document.getElementById("typing")?.remove();
 
 
         if (!response.ok) {
 
-          const errorText = await response.text();
+          console.error("Server error:", data);
 
-          throw new Error(errorText);
+          throw new Error(
+            data?.error?.message ||
+            "Groq API request failed"
+          );
         }
 
 
-        const data = await response.json();
-
-
         const aiReply =
-          data.choices?.[0]?.message?.content ||
+          data?.choices?.[0]?.message?.content ||
           "Sorry, I couldn't generate a response.";
 
 
-        // Add AI response
         addMessage(aiReply, "ai");
 
 
-        // Save AI response
         messages.push({
           role: "assistant",
           content: aiReply
@@ -338,31 +304,37 @@
         console.error(error);
 
         addMessage(
-          "❌ Error connecting to Grok API. Please check your API key and API setup.",
+          "❌ Groq API से connection नहीं हो पाया। Server और API key check करें.",
           "ai"
         );
+
+      } finally {
+
+        sendBtn.disabled = false;
+
+        userInput.focus();
+
       }
+
     }
 
 
-    // ==========================================
-    // SEND BUTTON
-    // ==========================================
+    sendBtn.addEventListener(
+      "click",
+      sendMessage
+    );
 
-    sendBtn.addEventListener("click", sendMessage);
 
+    userInput.addEventListener(
+      "keydown",
+      function(event) {
 
-    // ==========================================
-    // ENTER KEY
-    // ==========================================
+        if (event.key === "Enter") {
+          sendMessage();
+        }
 
-    userInput.addEventListener("keydown", function(event) {
-
-      if (event.key === "Enter") {
-        sendMessage();
       }
-
-    });
+    );
 
   </script>
 
