@@ -29,7 +29,7 @@
       background: white;
       border-radius: 18px;
       overflow: hidden;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
       display: flex;
       flex-direction: column;
     }
@@ -76,6 +76,10 @@
       cursor: pointer;
     }
 
+    .settings button:hover {
+      background: #1d4ed8;
+    }
+
     .chat-box {
       flex: 1;
       padding: 15px;
@@ -90,6 +94,7 @@
       border-radius: 14px;
       line-height: 1.5;
       white-space: pre-wrap;
+      word-wrap: break-word;
     }
 
     .user {
@@ -137,6 +142,15 @@
       background: #9ca3af;
       cursor: not-allowed;
     }
+
+    .clear-btn {
+      margin-top: 8px;
+      background: #dc2626 !important;
+    }
+
+    .clear-btn:hover {
+      background: #b91c1c !important;
+    }
   </style>
 </head>
 
@@ -144,30 +158,46 @@
 
   <div class="chatbot">
 
+    <!-- Header -->
     <div class="header">
       <h1>SP AI Chatbot</h1>
       <p>Powered by Groq API</p>
     </div>
 
+    <!-- API Settings -->
     <div class="settings">
+
       <input
         type="password"
         id="apiKey"
-        placeholder="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"
+        placeholder="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"
+        autocomplete="off"
       >
 
       <button onclick="saveAPIKey()">
         Save API Key
       </button>
+
+      <button class="clear-btn" onclick="clearAPIKey()">
+        Clear Saved API Key
+      </button>
+
     </div>
 
+    <!-- Chat -->
     <div class="chat-box" id="chatBox">
+
       <div class="message bot">
-        Hello! 👋 I am SP AI Chatbot. Enter your Groq API key and ask me anything.
+        Hello! 👋 I am SP AI Chatbot.
+
+        Please enter your Groq API key above and then ask me anything.
       </div>
+
     </div>
 
+    <!-- Message Input -->
     <div class="input-area">
+
       <input
         type="text"
         id="userInput"
@@ -178,6 +208,7 @@
       <button id="sendBtn" onclick="sendMessage()">
         Send
       </button>
+
     </div>
 
   </div>
@@ -185,129 +216,242 @@
 
   <script>
 
-    // Groq API
-    const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+    // --------------------------------
+    // GROQ API CONFIGURATION
+    // --------------------------------
 
-    // Model
-    const MODEL = "llama-3.3-70b-versatile";
+    const GROQ_URL =
+      "https://api.groq.com/openai/v1/chat/completions";
 
-    let apiKey = localStorage.getItem("groq_api_key") || "";
+    const MODEL =
+      "llama-3.3-70b-versatile";
 
-    // Save API Key
+
+    // Get saved API key
+    let apiKey =
+      localStorage.getItem("groq_api_key") || "";
+
+
+    // --------------------------------
+    // SAVE API KEY
+    // --------------------------------
+
     function saveAPIKey() {
 
-      const key = document.getElementById("apiKey").value.trim();
+      const key =
+        document.getElementById("apiKey").value.trim();
 
-      if ("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");
+      if (!key) {
+
+        alert("Please enter your Groq API key.");
+
         return;
       }
 
       apiKey = key;
 
-      localStorage.setItem("groq_api_key", key);
+      localStorage.setItem(
+        "groq_api_key",
+        key
+      );
 
-      alert("API Key saved successfully!");
+      alert("Groq API key saved successfully!");
+
     }
 
 
-    // Add message to chat
+    // --------------------------------
+    // CLEAR API KEY
+    // --------------------------------
+
+    function clearAPIKey() {
+
+      localStorage.removeItem("groq_api_key");
+
+      apiKey = "";
+
+      document.getElementById("apiKey").value = "";
+
+      alert("Saved API key cleared.");
+
+    }
+
+
+    // --------------------------------
+    // ADD MESSAGE
+    // --------------------------------
+
     function addMessage(text, type) {
 
-      const chatBox = document.getElementById("chatBox");
+      const chatBox =
+        document.getElementById("chatBox");
 
-      const message = document.createElement("div");
+      const message =
+        document.createElement("div");
 
-      message.className = "message " + type;
+      message.className =
+        "message " + type;
 
       message.textContent = text;
 
       chatBox.appendChild(message);
 
-      chatBox.scrollTop = chatBox.scrollHeight;
+      chatBox.scrollTop =
+        chatBox.scrollHeight;
+
     }
 
 
-    // Send message
+    // --------------------------------
+    // SEND MESSAGE
+    // --------------------------------
+
     async function sendMessage() {
 
-      const input = document.getElementById("userInput");
-      const sendBtn = document.getElementById("sendBtn");
+      const input =
+        document.getElementById("userInput");
 
-      const message = input.value.trim();
+      const sendBtn =
+        document.getElementById("sendBtn");
 
-      if (!message) return;
+      const message =
+        input.value.trim();
 
-      if (!apiKey) {
-        alert("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");
+
+      // Empty message
+      if (!message) {
         return;
       }
 
-      addMessage(message, "user");
+
+      // API key check
+      if (!apiKey) {
+
+        alert(
+          "Please enter and save your Groq API key first."
+        );
+
+        return;
+      }
+
+
+      // Show user message
+      addMessage(
+        message,
+        "user"
+      );
 
       input.value = "";
 
+
+      // Disable button
       sendBtn.disabled = true;
-      sendBtn.textContent = "Thinking...";
+
+      sendBtn.textContent =
+        "Thinking...";
+
 
       try {
 
-        const response = await fetch(GROQ_URL, {
+        // --------------------------------
+        // GROQ API REQUEST
+        // --------------------------------
 
-          method: "POST",
+        const response =
+          await fetch(
+            GROQ_URL,
+            {
+              method: "POST",
 
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer " + apiKey
-          },
+              headers: {
+                "Content-Type":
+                  "application/json",
 
-          body: JSON.stringify({
-
-            model: MODEL,
-
-            messages: [
-              {
-                role: "system",
-                content:
-                  "You are SP AI Chatbot, a helpful and friendly AI assistant. Answer clearly and accurately."
+                "Authorization":
+                  "Bearer " + apiKey
               },
 
-              {
-                role: "user",
-                content: message
-              }
-            ],
+              body: JSON.stringify({
 
-            temperature: 0.7,
+                model: MODEL,
 
-            max_tokens: 1024
+                messages: [
 
-          })
+                  {
+                    role: "system",
 
-        });
+                    content:
+                      "You are SP AI Chatbot, a helpful, friendly and accurate AI assistant. Give clear answers and respond in the same language as the user whenever possible."
+                  },
+
+                  {
+                    role: "user",
+
+                    content: message
+                  }
+
+                ],
+
+                temperature: 0.7,
+
+                max_tokens: 1024
+
+              })
+
+            }
+          );
 
 
-        const data = await response.json();
+        // Convert response to JSON
+        const data =
+          await response.json();
 
+
+        // --------------------------------
+        // ERROR HANDLING
+        // --------------------------------
 
         if (!response.ok) {
 
           throw new Error(
-            data.error?.message ||
-            "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"
+            data?.error?.message ||
+            "Groq API request failed."
           );
 
         }
 
 
+        // --------------------------------
+        // GET AI RESPONSE
+        // --------------------------------
+
         const reply =
-          data.choices?.[0]?.message?.content ||
-          "Sorry, I could not generate a response.";
+          data?.choices?.[0]?.message?.content;
 
 
-        addMessage(reply, "bot");
+        if (!reply) {
+
+          throw new Error(
+            "No response received from Groq."
+          );
+
+        }
+
+
+        // Show AI response
+        addMessage(
+          reply,
+          "bot"
+        );
 
 
       } catch (error) {
+
+        console.error(
+          "Groq API Error:",
+          error
+        );
+
 
         addMessage(
           "Error: " + error.message,
@@ -316,27 +460,47 @@
 
       } finally {
 
+        // Enable button
         sendBtn.disabled = false;
-        sendBtn.textContent = "Send";
+
+        sendBtn.textContent =
+          "Send";
 
       }
+
     }
 
 
-    // Enter key
+    // --------------------------------
+    // ENTER KEY
+    // --------------------------------
+
     function handleEnter(event) {
 
-      if (event.key === "Enter") {
+      if (
+        event.key === "Enter" &&
+        !event.shiftKey
+      ) {
+
+        event.preventDefault();
+
         sendMessage();
+
       }
 
     }
 
 
-    // Load saved API key
-    document.getElementById("apiKey").value = apiKey;
+    // --------------------------------
+    // LOAD SAVED API KEY
+    // --------------------------------
+
+    document.getElementById(
+      "apiKey"
+    ).value = apiKey;
+
 
   </script>
 
 </body>
-</html>
+</html>      
